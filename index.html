@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to right, #3494e6, #ec6ead);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #3494e6;
+        }
+
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #city-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #search-btn {
+            background-color: #3494e6;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #search-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .weather-info {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .weather-info.active {
+            display: block;
+        }
+
+        .city-name {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .weather-icon {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .temperature {
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: capitalize;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .detail {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .error-message {
+            display: none;
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 5px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather App</h1>
+        
+        <div class="search-box">
+            <input type="text" id="city-input" placeholder="Enter city name">
+            <button id="search-btn">Search</button>
+        </div>
+        
+        <div class="weather-info" id="weather-container">
+            <!-- Weather information will be displayed here -->
+        </div>
+        
+        <div class="error-message" id="error-container">
+            <!-- Error messages will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // API key from OpenWeatherMap
+        const apiKey = '2f6e0b6fd97518c9ff345131788f4293';
+
+        // DOM elements
+        const cityInput = document.getElementById('city-input');
+        const searchBtn = document.getElementById('search-btn');
+        const weatherContainer = document.getElementById('weather-container');
+        const errorContainer = document.getElementById('error-container');
+
+        // Add event listener to search button
+        searchBtn.addEventListener('click', getWeather);
+
+        // Add event listener for Enter key press
+        cityInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                getWeather();
+            }
+        });
+
+        // Function to fetch weather data
+        async function getWeather() {
+            const cityName = cityInput.value.trim();
+            
+            // Check if city name is empty
+            if (!cityName) {
+                showError('Please enter a city name');
+                return;
+            }
+            
+            try {
+                // Construct API URL
+                const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`;
+                
+                // Fetch data from API
+                const response = await fetch(apiUrl);
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    throw new Error('City not found');
+                }
+                
+                // Convert response to JSON
+                const data = await response.json();
+                
+                // Display weather data
+                displayWeather(data);
+                
+                // Clear any previous errors
+                errorContainer.classList.remove('active');
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        // Function to display weather data
+        function displayWeather(data) {
+            // Extract data from API response
+            const cityName = data.name;
+            const country = data.sys.country;
+            const temperature = Math.round(data.main.temp);
+            const feelsLike = Math.round(data.main.feels_like);
+            const weatherDescription = data.weather[0].description;
+            const weatherIcon = data.weather[0].icon;
+            const humidity = data.main.humidity;
+            const windSpeed = data.wind.speed;
+            
+            // Create HTML content for weather info
+            weatherContainer.innerHTML = `
+                <div class="city-name">${cityName}, ${country}</div>
+                <div class="weather-icon">
+                    <img src="https://openweathermap.org/img/wn/${weatherIcon}@2x.png" alt="${weatherDescription}">
+                </div>
+                <div class="temperature">${temperature}°C</div>
+                <div class="description">${weatherDescription}</div>
+                <div class="weather-details">
+                    <div class="detail">
+                        <span>Feels like:</span>
+                        <span>${feelsLike}°C</span>
+                    </div>
+                    <div class="detail">
+                        <span>Humidity:</span>
+                        <span>${humidity}%</span>
+                    </div>
+                    <div class="detail">
+                        <span>Wind:</span>
+                        <span>${windSpeed} m/s</span>
+                    </div>
+                </div>
+            `;
+            
+            // Show weather container
+            weatherContainer.classList.add('active');
+        }
+
+        // Function to show error messages
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.classList.add('active');
+            weatherContainer.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
